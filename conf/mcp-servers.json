@@ -1,0 +1,212 @@
+{
+  "$schema": "https://modelcontextprotocol.io/schemas/server-config.json",
+  "mcpServers": {
+    "fetch": {
+      "description": "Web content fetching and conversion for efficient LLM usage",
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "mcp/fetch"
+      ],
+      "transport": "stdio",
+      "env": {},
+      "docker": {
+        "image": "mcp/fetch",
+        "build_command": "docker build -t mcp/fetch -f src/fetch/Dockerfile .",
+        "pull_command": "docker pull mcp/fetch"
+      },
+      "capabilities": {
+        "tools": ["fetch"],
+        "description": "Fetches URLs and extracts content as markdown. Can access local/internal IPs - exercise caution."
+      },
+      "options": {
+        "ignore_robots_txt": false,
+        "user_agent": "ModelContextProtocol/1.0 (Autonomous; +https://github.com/modelcontextprotocol/servers)"
+      }
+    },
+    "filesystem": {
+      "description": "Secure file operations with configurable access controls",
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "--mount",
+        "type=bind,src=/Users/joao/dev/NIE,dst=/projects/NIE",
+        "--mount",
+        "type=bind,src=/Users/joao/Documents,dst=/projects/Documents,ro",
+        "mcp/filesystem",
+        "/projects"
+      ],
+      "transport": "stdio",
+      "env": {},
+      "docker": {
+        "image": "mcp/filesystem",
+        "build_command": "docker build -t mcp/filesystem -f src/filesystem/Dockerfile .",
+        "pull_command": "docker pull mcp/filesystem"
+      },
+      "capabilities": {
+        "tools": [
+          "read_file",
+          "write_file",
+          "edit_file",
+          "create_directory",
+          "list_directory",
+          "move_file",
+          "search_files",
+          "get_file_info"
+        ],
+        "description": "Provides filesystem operations with sandboxed directory access. Directories mounted to /projects."
+      },
+      "mounted_directories": [
+        {
+          "host": "/Users/joao/dev/NIE",
+          "container": "/projects/NIE",
+          "readonly": false
+        },
+        {
+          "host": "/Users/joao/Documents",
+          "container": "/projects/Documents",
+          "readonly": true
+        }
+      ]
+    },
+    "memory": {
+      "description": "Knowledge graph-based persistent memory system",
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "-v",
+        "mcp-client-memory:/app/dist",
+        "--rm",
+        "mcp/memory"
+      ],
+      "transport": "stdio",
+      "env": {
+        "MEMORY_FILE_PATH": "/app/dist/memory.jsonl"
+      },
+      "docker": {
+        "image": "mcp/memory",
+        "build_command": "docker build -t mcp/memory -f src/memory/Dockerfile .",
+        "pull_command": "docker pull mcp/memory",
+        "volume": "mcp-client-memory"
+      },
+      "capabilities": {
+        "tools": [
+          "create_entities",
+          "create_relations",
+          "add_observations",
+          "delete_entities",
+          "delete_observations",
+          "delete_relations",
+          "read_graph",
+          "search_nodes",
+          "open_nodes"
+        ],
+        "description": "Persistent memory using knowledge graph. Stores entities, relations, and observations across sessions."
+      }
+    },
+    "git": {
+      "description": "Tools to read, search, and manipulate Git repositories",
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "--mount",
+        "type=bind,src=/Users/joao/dev,dst=/repos",
+        "mcp/git",
+        "/repos"
+      ],
+      "transport": "stdio",
+      "env": {},
+      "docker": {
+        "image": "mcp/git",
+        "build_command": "docker build -t mcp/git -f src/git/Dockerfile .",
+        "pull_command": "docker pull mcp/git"
+      },
+      "capabilities": {
+        "tools": [
+          "git_status",
+          "git_diff",
+          "git_commit",
+          "git_log",
+          "git_show",
+          "git_search",
+          "git_blame"
+        ],
+        "description": "Git repository operations including status, diff, commit, log, and search capabilities."
+      },
+      "mounted_directories": [
+        {
+          "host": "/Users/joao/dev",
+          "container": "/repos",
+          "readonly": false
+        }
+      ]
+    },
+    "time": {
+      "description": "Time and timezone conversion capabilities",
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "mcp/time"
+      ],
+      "transport": "stdio",
+      "env": {},
+      "docker": {
+        "image": "mcp/time",
+        "build_command": "docker build -t mcp/time -f src/time/Dockerfile .",
+        "pull_command": "docker pull mcp/time"
+      },
+      "capabilities": {
+        "tools": [
+          "get_current_time",
+          "convert_time",
+          "get_timezone_info"
+        ],
+        "description": "Provides current time, timezone conversion, and timezone information utilities."
+      }
+    }
+  },
+  "notes": {
+    "docker_requirements": [
+      "Docker must be installed and running",
+      "For official MCP servers, use: docker pull mcp/<server-name>",
+      "To build from source: clone https://github.com/modelcontextprotocol/servers",
+      "All servers use stdio transport (stdin/stdout), not TCP ports"
+    ],
+    "usage": {
+      "list_servers": "python3 -m mcp_client --list-servers",
+      "use_server": "python3 -m mcp_client --server <server-name> --chat",
+      "use_multiple": "Multiple servers not yet supported, but planned for future versions"
+    },
+    "security_notes": [
+      "fetch server can access local/internal IPs - use with caution",
+      "filesystem server has sandboxed access to mounted directories only",
+      "memory server stores data in Docker volume: mcp-client-memory",
+      "git server has access to mounted repository directories"
+    ],
+    "customization": [
+      "Modify 'mounted_directories' to change filesystem/git access",
+      "Add --ignore-robots-txt to fetch args to bypass robots.txt",
+      "Set custom user agent for fetch: --user-agent='YourUserAgent'",
+      "Customize memory storage path via MEMORY_FILE_PATH env var"
+    ]
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "created": "2025-11-23",
+    "mcp_protocol_version": "2024-11-05",
+    "compatible_with": [
+      "mcp-client >= 0.1.0",
+      "Docker >= 20.10.0"
+    ],
+    "official_repo": "https://github.com/modelcontextprotocol/servers"
+  }
+}

@@ -6,7 +6,7 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
 from mcp_client import chat
-from mcp_client.handlers import OpenAIQueryHandler
+from mcp_client.handlers import create_query_handler
 
 
 class MCPClient:
@@ -19,8 +19,15 @@ class MCPClient:
 
     client_session: ClassVar[ClientSession]
 
-    def __init__(self, server_path: str):
+    def __init__(
+        self,
+        server_path: str,
+        provider: str | None = None,
+        model: str | None = None,
+    ):
         self.server_path = server_path
+        self.provider = provider
+        self.model = model
         self.exit_stack = AsyncExitStack()
 
     async def __aenter__(self) -> Self:
@@ -87,9 +94,16 @@ class MCPClient:
             print(f"\n{section.upper()}: Error - {e}")
 
     async def run_chat(self) -> None:
-        """Start interactive chat with MCP server using OpenAI."""
+        """Start interactive chat with MCP server using configured LLM."""
         try:
-            handler = OpenAIQueryHandler(self.client_session)
+            handler = create_query_handler(
+                self.client_session,
+                provider=self.provider,
+                model=self.model,
+            )
+            provider_name = type(handler).__name__.replace("QueryHandler", "")
+            model_name = getattr(handler, "model", "unknown")
+            print(f"Using {provider_name} with model: {model_name}")
             await chat.run_chat(handler)
         except RuntimeError as e:
             print(e)

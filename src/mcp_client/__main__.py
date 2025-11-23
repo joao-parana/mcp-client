@@ -12,7 +12,11 @@ async def main() -> None:
         return
 
     try:
-        async with MCPClient(str(args.server_path)) as client:
+        async with MCPClient(
+            str(args.server_path),
+            provider=args.provider,
+            model=args.model,
+        ) as client:
             if args.members:
                 await client.list_all_members()
             elif args.chat:

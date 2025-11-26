@@ -8,6 +8,13 @@ from typing import Any
 from mcp import ClientSession
 from openai import OpenAI
 
+from mcp_client.colors import (
+    assistant_prefix,
+    colorize,
+    Colors,
+    tool_message,
+)
+
 MAX_TOKENS = 1000
 
 
@@ -52,10 +59,11 @@ class BaseQueryHandler(ABC):
                 tool_args,
             )
             content = result.content[0].text if result.content else ""
-            log = f"[Used {tool_name}({tool_args})]"
+            # Format tool execution message with cyan color
+            log = tool_message(f"[Used {tool_name}({tool_args})]")
         except Exception as e:
             content = f"Error: {e}"
-            log = f"[{content}]"
+            log = tool_message(f"[{content}]")
 
         return {
             "log": log,
@@ -122,7 +130,9 @@ class OpenAIQueryHandler(BaseQueryHandler):
             if content := final_response.choices[0].message.content:
                 result_parts.append(content)
 
-        return "Assistant: " + "\n".join(result_parts)
+        # Format the response with colored prefix
+        response_text = "\n".join(result_parts)
+        return f"{assistant_prefix()}{colorize(response_text, Colors.ASSISTANT)}"
 
 
 class OllamaQueryHandler(BaseQueryHandler):
@@ -202,7 +212,9 @@ class OllamaQueryHandler(BaseQueryHandler):
             if content := final_response["message"].get("content"):
                 result_parts.append(content)
 
-        return "Assistant: " + "\n".join(result_parts)
+        # Format the response with colored prefix
+        response_text = "\n".join(result_parts)
+        return f"{assistant_prefix()}{colorize(response_text, Colors.ASSISTANT)}"
 
     async def _execute_tool_ollama(
         self, tool_call: dict[str, Any]
@@ -218,10 +230,11 @@ class OllamaQueryHandler(BaseQueryHandler):
                 tool_args,
             )
             content = result.content[0].text if result.content else ""
-            log = f"[Used {tool_name}({tool_args})]"
+            # Format tool execution message with cyan color
+            log = tool_message(f"[Used {tool_name}({tool_args})]")
         except Exception as e:
             content = f"Error: {e}"
-            log = f"[{content}]"
+            log = tool_message(f"[{content}]")
 
         return {
             "log": log,
